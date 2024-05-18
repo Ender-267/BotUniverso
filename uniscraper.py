@@ -40,8 +40,8 @@ def scrape():
         s = i.replace('\n', '')
         s = s.split(' ')
         if i != 'NF\n':
-            if len(s) == 7:
-                contenido_fichero2.append(Entrada(s[2], s[3], s[5], s[6]))
+            if len(s) == 6:
+                contenido_fichero2.append(Entrada(s[2], s[3], s[5], None))
             else:
                 contenido_fichero2.append(Entrada(s[2], None, s[3], s[4]))
     contenido_fichero = contenido_fichero2
