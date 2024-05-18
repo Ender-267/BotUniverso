@@ -21,8 +21,8 @@ class Entrada:
 
     def __str__(self):
         fecha = datetime.now().strftime("%Y/%m/%d %H:%M")
-        if self.rango_anterior:
-            return f"{fecha} {self.usuario} {self.rango_anterior} a {self.rango_nuevo} {self.duracion}\n"
+        if self.rango_anterior and not self.duracion:
+            return f"{fecha} {self.usuario} {self.rango_anterior} a {self.rango_nuevo}\n"
         return f"{fecha} {self.usuario} {self.rango_nuevo} {self.duracion}\n"
     
 
@@ -98,12 +98,12 @@ def parsear_string_de_rango(s: str) -> Entrada:
     if s[2].lower() == 'a':
         rango_anterior = s[1]
         rango_nuevo = s[3]
-        duracion = s[4]
+        duracion = None
     else:
         rango_anterior = None
         rango_nuevo = s[1]
         duracion = s[2]
-    if 'PERMANENTE' in duracion:
+    if duracion and 'PERMANENTE' in duracion:
         duracion = 'PERMANENTE'
     return Entrada(username, rango_anterior, rango_nuevo, duracion)
 
@@ -114,4 +114,5 @@ def schedulef():
         time.sleep(10)
 
 if __name__ == "__main__":
+    scrape()
     schedulef()
