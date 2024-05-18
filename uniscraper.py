@@ -72,6 +72,7 @@ def scrape():
         if not encontrado and len(contenido_fichero2) != 0:
             print("Rango anterior no encontrado")
             archivo.write("NF\n")
+    print("Lectura completada")
     return
 
 
