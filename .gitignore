@@ -1,2 +1,5 @@
 /rangos.txt
 /venv
+build
+*.spec
+dist/uniscraper/_internal
