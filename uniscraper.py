@@ -76,8 +76,7 @@ def scrape():
                 encontrado = True
         if not encontrado:
             rangos2.append(i)
-
-                
+    rangos2.reverse()
 
     with open(FICHERO, 'a', encoding='utf-8') as archivo:
         for i in rangos2:
