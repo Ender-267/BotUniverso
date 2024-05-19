@@ -3,3 +3,4 @@
 build
 *.spec
 dist/uniscraper/_internal
+__pycache__/unistats_scraper.cpython-310.pyc

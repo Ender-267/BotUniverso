@@ -5,6 +5,7 @@ import time
 import re
 from pathlib import Path
 from datetime import datetime
+from unistats_scraper import es_premium
 
 URL = 'https://tienda.universocraft.com/'
 FICHERO = Path('./rangos.txt')
@@ -20,10 +21,14 @@ class Entrada:
         return (self.usuario == other.usuario) and (self.rango_anterior == other.rango_anterior) and (self.rango_nuevo == other.rango_nuevo) and (self.duracion == other.duracion)
 
     def __str__(self):
+        if es_premium(self.usuario):
+            s = 'PREMIUM'
+        else:
+            s = 'NO_PREMIUM'
         fecha = datetime.now().strftime("%Y/%m/%d %H:%M")
         if self.rango_anterior and not self.duracion:
-            return f"{fecha} {self.usuario} {self.rango_anterior} a {self.rango_nuevo}\n"
-        return f"{fecha} {self.usuario} {self.rango_nuevo} {self.duracion}\n"
+            return f"{fecha} {self.usuario} {self.rango_anterior} a {self.rango_nuevo} {s}\n"
+        return f"{fecha} {self.usuario} {self.rango_nuevo} {self.duracion} {s}\n"
     
 
 
@@ -39,6 +44,7 @@ def scrape():
     for i in contenido_fichero:
         s = i.replace('\n', '')
         s = s.split(' ')
+        s.pop()
         if i != 'NF\n':
             if len(s) == 6:
                 contenido_fichero2.append(Entrada(s[2], s[3], s[5], None))
