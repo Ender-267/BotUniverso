@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 
-def es_premium(nick: str) -> bool:
+
+
+def scraper(nick: str) -> bool:
     url = "https://stats.universocraft.com/jugador/" + nick
     headers = {
         'User-Agent': 'BOT'
