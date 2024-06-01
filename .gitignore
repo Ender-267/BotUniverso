@@ -4,3 +4,7 @@ build
 *.spec
 dist/uniscraper/_internal
 __pycache__/unistats_scraper.cpython-310.pyc
+hycraft/hycraft.txt
+hycraft/n_hycraft.txt
+hycraft/n2_hyccraft.txt
+hycraft/n2_hycraft.txt
