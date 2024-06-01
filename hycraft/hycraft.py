@@ -106,11 +106,8 @@ def unistats(nick: str) -> bool:
 
 
 FINAL = './hycraft.txt'
-    
-if __name__ == '__main__':
-    eliminar_duplicados()
 
-if __name__ == '':
+if __name__ == '__main__':
     encontrado = False
     if len(sys.argv) > 1:
         obj = sys.argv[1]
