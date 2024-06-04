@@ -1,13 +1,6 @@
-/rangos.txt
 /venv
-build
-*.spec
-dist/uniscraper/_internal
-__pycache__/unistats_scraper.cpython-310.pyc
-hycraft/hycraft.txt
-hycraft/n_hycraft.txt
-hycraft/n2_hyccraft.txt
-hycraft/n2_hycraft.txt
 hycraft.txt
-v2/OmegaCraft.json
-v2/base.db
+n2_hycraft.txt
+OmegaCraft.json
+rangos.txt
+*.db
