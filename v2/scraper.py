@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 import urllib3
+from colorama import Fore, Style
 
 BASE_DE_DATOS_SQL = './v2/base.db'
 TXT_HYCRAFT = './v2/hycraft.txt'
@@ -14,63 +15,86 @@ def lanzar_navegador():
     opciones = Options()
     #opciones.add_argument("--headless")
     driver = webdriver.Firefox(options=opciones)
-    sleep(10)
+    sleep(5)
     return driver
 
-def captcha(nav: webdriver.Firefox):
+def detectar_captcha(nav: webdriver.Firefox):
     iframe = nav.find_elements(By.TAG_NAME, "iframe")
     if iframe:
-        nav.switch_to.frame(iframe[0])
-        inputs = nav.find_elements(By.TAG_NAME,"input")
-        nav.switch_to.default_content()
-        for i in inputs:
-            atributo = i.get_attribute("type")
-            print(atributo)
-            if atributo == "checkbox":
-                break
-        captcha = i
-        captcha.click()
+        print(Fore.CYAN + "Captcha detectado" + Style.RESET_ALL)
         sleep(5)
-    sleep(3)
-
-def detectar_404(nav: webdriver.Firefox):
-    es_404 = False
-    pres = nav.find_elements(By.TAG_NAME, 'pre')
-    for i in pres:
-        atributo = i.get_attribute("style")
-        if atributo == "word-wrap: break-word; white-space: pre-wrap;":
-            es_404 = True
-            break
-    return es_404
+        iframe = nav.find_elements(By.TAG_NAME, "iframe")
+        if iframe:
+            nav.switch_to.frame(iframe[0])
+            inputs = nav.find_elements(By.TAG_NAME,"input")
+            
+            for i in inputs:
+                atributo = i.get_attribute("type")
+                print(atributo)
+                if atributo == "checkbox":
+                    break
+            captcha = i
+            captcha.click()
+            sleep(5)
+            nav.switch_to.default_content()
+        return True
+    else:
+        return False
 
 def unistats(nick: str, nav: webdriver.Firefox):
     url = "https://stats.universocraft.com/jugador/" + nick
     url_error = 'https://stats.universocraft.com/?error=true'
     nav.get(url)
-    sleep(1.2)
+    sleep(1.5)
+    detectar_captcha(nav)
     pagina = BeautifulSoup(nav.page_source, 'html.parser')
-    if detectar_404(nav):
-        print("Error 404")
-        return 'ERROR'
     tag_rango = pagina.find('span', class_="ProfileTag TagRank")
+    tiempo_de_espera = 0
     while not tag_rango and nav.current_url != url_error:
-        sleep(3)
-        captcha(nav)
+        sleep(0.1)
         tag_rango = pagina.find('span', class_="ProfileTag TagRank")
-    
+        tiempo_de_espera += 0.1
+        if tiempo_de_espera >= 3:
+            print("Error de carga de pagina")
+            return unistats(nick, nav)
     if nav.current_url == url_error:
         return (None, None)
     
-    pagina = BeautifulSoup(nav.page_source, 'html.parser')
     tag_premium = pagina.find('span', class_="ProfileTag TagPremium")
     if tag_premium:
         premium = 'SI'
     else:
         premium = 'NO'
-    tag_rango = pagina.find('span', class_="ProfileTag TagRank")
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
     return (rango, premium)
-    
+
+def texto_rango(rango:str) -> str:
+    rango = rango[:3]
+    match rango:
+        case 'USU':
+            texto_rango = '{}{}{}'.format(Fore.WHITE, rango, Style.RESET_ALL)
+        case 'JUP':
+            texto_rango = '{}{}{}'.format(Fore.CYAN, rango, Style.RESET_ALL)
+        case 'NEP':
+            texto_rango = '{}{}{}'.format(Fore.BLUE, rango, Style.RESET_ALL)
+        case 'MER':
+            texto_rango = '{}{}{}'.format(Fore.GREEN, rango, Style.RESET_ALL)
+        case 'SAT':
+            texto_rango = '{}{}{}'.format(Fore.MAGENTA, rango, Style.RESET_ALL)
+        case 'AYU':
+            texto_rango = '{}{}{}'.format(Fore.YELLOW, rango, Style.RESET_ALL)
+        case 'MOD':
+            texto_rango = '{}{}{}'.format(Fore.CYAN, rango, Style.RESET_ALL)
+        case 'ADM':
+            texto_rango = '{}{}{}'.format(Fore.RED, rango, Style.RESET_ALL)
+        case 'YT':
+            texto_rango = '{}{}{}'.format(Fore.RED, rango, Style.RESET_ALL)
+        case 'STR':
+            texto_rango = '{}{}{}'.format(Fore.MAGENTA, rango, Style.RESET_ALL)
+        case _:
+            texto_rango = f"NR{rango}"
+    return texto_rango
+
 def scraper():
     global nav
     try:
@@ -86,7 +110,20 @@ def scraper():
         ret = unistats(usuario, nav)
         if ret == 'ERROR':
             continue
-        print(f"{usuario}     {ret[0]}     {ret[1]}")
+        rango = ret[0]
+        premium = ret[1]
+        if not premium and not rango:
+            print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
+            continue
+        match premium:
+            case 'SI':
+                texto_premium = "PREMIUM"
+            case 'NO':
+                texto_premium = "NO_PREMIUM"
+            case _:
+                texto_premium = "WTF"
+        s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
+        print(s, end='')
 
 
 
