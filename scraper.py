@@ -12,7 +12,7 @@ BASE_DE_DATOS_SQL = './base.db'
 
 def lanzar_navegador():
     opciones = Options()
-    #opciones.add_argument("--headless")
+    opciones.add_argument("--headless")
     driver = webdriver.Firefox(options=opciones)
     sleep(5)
     return driver
