@@ -5,11 +5,10 @@ import locale
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-import urllib3
+from datetime import datetime
 from colorama import Fore, Style
 
-BASE_DE_DATOS_SQL = './v2/base.db'
-TXT_HYCRAFT = './v2/hycraft.txt'
+BASE_DE_DATOS_SQL = './base.db'
 
 def lanzar_navegador():
     opciones = Options()
@@ -68,7 +67,9 @@ def unistats(nick: str, nav: webdriver.Firefox):
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
     return (rango, premium)
 
-def texto_rango(rango:str) -> str:
+def texto_rango(rango:str) -> str | None:
+    if not rango:
+        return None
     rango = rango[:3]
     match rango:
         case 'USU':
@@ -95,43 +96,52 @@ def texto_rango(rango:str) -> str:
             texto_rango = f"NR{rango}"
     return texto_rango
 
-def scraper():
-    global nav
+def scraper(nav: webdriver.Firefox):
     try:
-        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
-    except locale.Error:
-        print("The specified locale is not supported on your system.")
-    db = sqlite3.connect(BASE_DE_DATOS_SQL)
-    cursor = db.cursor()
-    querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
-    while querry:
-        cursor.execute(querry)
-        usuario = cursor.fetchone()[0]
-        ret = unistats(usuario, nav)
-        if ret == 'ERROR':
-            continue
-        rango = ret[0]
-        premium = ret[1]
-        if not premium and not rango:
-            print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
-            continue
-        match premium:
-            case 'SI':
-                texto_premium = "PREMIUM"
-            case 'NO':
-                texto_premium = "NO_PREMIUM"
-            case _:
-                texto_premium = "WTF"
-        s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
-        print(s, end='')
+        try:
+            locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+        except locale.Error:
+            print("The specified locale is not supported on your system.")
+        db = sqlite3.connect(BASE_DE_DATOS_SQL)
+        cursor = db.cursor()
+        querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
+        while querry:
+            cursor.execute(querry)
+            usuario = cursor.fetchone()[0]
+            ret = unistats(usuario, nav)
+            if ret == 'ERROR':
+                continue
+            rango = ret[0]
+            premium = ret[1]
+            fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if not premium and not rango:
+                cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario))
+                db.commit()
+                print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
+                continue
+            match premium:
+                case 'SI':
+                    texto_premium = "PREMIUM"
+                case 'NO':
+                    texto_premium = "NO_PREMIUM"
+                case _:
+                    texto_premium = "WTF"
+            cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", (rango, premium, fecha, usuario))
+            db.commit()
+            s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
+            print(s, end='')
+    except Exception as e:
+        print(e)
+        nav.close()
+        sleep(3)
+        db.commit()
+        db.close()
+
 
 
 
 
 if __name__ == '__main__':
     nav = lanzar_navegador()
-    try:
-        scraper()
-    except KeyboardInterrupt:
-        nav.close
+    scraper(nav)
     nav.close()

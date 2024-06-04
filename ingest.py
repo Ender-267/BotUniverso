@@ -143,6 +143,7 @@ def crear_db():
             FOREIGN KEY (usuario) REFERENCES usuarios(usuario)
         )
     ''')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_rango ON usuarios(rango)')
 
     db.commit()
     db.close()
