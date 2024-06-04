@@ -57,10 +57,12 @@ def ingest_data(txt):
             # Extract the password and remove leading/trailing whitespace and double quotes
             password = line.split(': ')[1].strip().strip('"')
             passwords.append(password)
+        elif 'ip:' in line:
+            password = line.split(': ')[1].strip().strip('"')
+            passwords.append(password)
     
     # Return the extracted nicknames and passwords as a list of tuples
     lista = list(zip(nicknames, passwords))
-    random.shuffle(lista)
     return lista
 
 
