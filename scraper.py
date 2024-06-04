@@ -31,11 +31,15 @@ def detectar_captcha(nav: webdriver.Firefox):
                 atributo = i.get_attribute("type")
                 print(atributo)
                 if atributo == "checkbox":
+                    print(Fore.CYAN + "Captcha no verificado, checkbox encontrada" + Style.RESET_ALL)
                     break
             captcha = i
             captcha.click()
             sleep(5)
             nav.switch_to.default_content()
+            print(Fore.CYAN + "Captcha verificado con intervencion" + Style.RESET_ALL)
+        else:
+            print(Fore.CYAN + "Captcha verificado sin intervencion" + Style.RESET_ALL)
         return True
     else:
         return False
@@ -54,7 +58,7 @@ def unistats(nick: str, nav: webdriver.Firefox):
         tag_rango = pagina.find('span', class_="ProfileTag TagRank")
         tiempo_de_espera += 0.1
         if tiempo_de_espera >= 3:
-            print("Error de carga de pagina")
+            print(Fore.RED + "Error de carga de pagina" + Style.RESET_ALL)
             return unistats(nick, nav)
     if nav.current_url == url_error:
         return (None, None)
