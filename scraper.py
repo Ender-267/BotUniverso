@@ -1,16 +1,29 @@
 from bs4 import BeautifulSoup
 from time import sleep
 import sqlite3
-import locale
 from datetime import datetime
 from colorama import Fore, Style
 import requests
+from sys import argv
+import json
 
 BASE_DE_DATOS_SQL = './base.db'
-
+TOKEN_TXT = './token.json'
+    
 def obtener_token():
-    token = input(Fore.CYAN + "Insertar nuevo token: " + Style.RESET_ALL)
-    return token
+    global token
+    with open(TOKEN_TXT, 'r', encoding='utf-8') as archivo:
+        datos = json.load(archivo)
+    with open(TOKEN_TXT, 'w', encoding='utf-8') as archivo:
+        datos["http_error"] = True
+        json.dump(datos, archivo)
+    while datos["http_error"]:
+        sleep(5)
+        with open(TOKEN_TXT, 'r', encoding='utf-8') as archivo:
+            datos = json.load(archivo)
+            print(Fore.CYAN + "Lectura de token..." + Style.RESET_ALL)
+            token = datos["token"]
+    
 
 def unistats(nick: str):
     global token
@@ -40,21 +53,25 @@ def unistats(nick: str):
     session.headers.update(headers)
     try:
         respuesta = session.get(url)
-        respuesta.raise_for_status() # Errores HTTP
-        if not respuesta:
-            print(Fore.YELLOW + "Error 403" + Style.RESET_ALL)
-            token = obtener_token()
+        if respuesta.status_code == 403:
+            print(Fore.YELLOW + "Error 403 Forbidden" + Style.RESET_ALL)
+            token = None
+            while not token:
+                sleep(2)
             return unistats(nick)
+        elif respuesta.status_code == 404:
+            print(Fore.RED + "Error 404 Not Found" + Style.RESET_ALL)
+            sleep(8)
+            return unistats(nick)
+        respuesta.raise_for_status()
     except requests.RequestException as e:
         print(f"Error fetching the webpage: {e}")
-        sleep(5)
         return 'ERROR'
 
     url_error = "https://stats.universocraft.com/?error=true"
     if respuesta.url == url_error:
         return (None, None)
 
-    
     pagina = BeautifulSoup(respuesta.text, 'html.parser')
 
     tag_premium = pagina.find('span', class_="ProfileTag TagPremium")
@@ -62,12 +79,13 @@ def unistats(nick: str):
         premium = 'SI'
     else:
         premium = 'NO'
-    
+
     tag_rango = pagina.find('span', class_="ProfileTag TagRank")
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
     return (rango, premium)
 
-def texto_rango(rango:str) -> str | None:
+
+def texto_rango(rango: str) -> str | None:
     if not rango:
         return None
     rango = rango[:3]
@@ -98,49 +116,47 @@ def texto_rango(rango:str) -> str | None:
 
 def scraper():
     try:
-        try:
-            locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
-        except locale.Error:
-            print("The specified locale is not supported on your system.")
-        db = sqlite3.connect(BASE_DE_DATOS_SQL)
-        cursor = db.cursor()
-        querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
-        while querry:
-            cursor.execute(querry)
-            usuario = cursor.fetchone()[0]
-            sleep(1.2)
-            ret = unistats(usuario)
-            if ret == 'ERROR':
-                continue
-            rango = ret[0]
-            premium = ret[1]
-            fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            if not premium and not rango:
-                cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario))
+        with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
+            cursor = db.cursor()
+            querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
+            while True:
+                cursor.execute(querry)
+                usuario = cursor.fetchone()[0]
+                if not usuario:
+                    print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
+                    return
+                sleep(1.2)
+                ret = unistats(usuario)
+                if ret == 'ERROR':
+                    continue
+                rango = ret[0]
+                premium = ret[1]
+                fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if not premium and not rango:
+                    cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario))
+                    db.commit()
+                    print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
+                    continue
+                match premium:
+                    case 'SI':
+                        texto_premium = "PREMIUM"
+                    case 'NO':
+                        texto_premium = "NO_PREMIUM"
+                    case _:
+                        texto_premium = "WTF"
+                cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", (rango, premium, fecha, usuario))
                 db.commit()
-                print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
-                continue
-            match premium:
-                case 'SI':
-                    texto_premium = "PREMIUM"
-                case 'NO':
-                    texto_premium = "NO_PREMIUM"
-                case _:
-                    texto_premium = "WTF"
-            cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", (rango, premium, fecha, usuario))
-            db.commit()
-            s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
-            print(s, end='')
+                s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
+                print(s, end='')
     except Exception as e:
         print(e)
         sleep(3)
         db.commit()
         db.close()
-
-
+        return
 
 
 
 if __name__ == '__main__':
-    token = obtener_token()
+    obtener_token()
     scraper()
