@@ -2,72 +2,71 @@ from bs4 import BeautifulSoup
 from time import sleep
 import sqlite3
 import locale
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
 from datetime import datetime
 from colorama import Fore, Style
+import requests
 
 BASE_DE_DATOS_SQL = './base.db'
 
-def lanzar_navegador():
-    opciones = Options()
-    opciones.add_argument("--headless")
-    driver = webdriver.Firefox(options=opciones)
-    sleep(5)
-    return driver
+def obtener_token():
+    token = input(Fore.CYAN + "Insertar nuevo token: " + Style.RESET_ALL)
+    return token
 
-def detectar_captcha(nav: webdriver.Firefox):
-    iframe = nav.find_elements(By.TAG_NAME, "iframe")
-    if iframe:
-        print(Fore.CYAN + "Captcha detectado" + Style.RESET_ALL)
-        sleep(5)
-        iframe = nav.find_elements(By.TAG_NAME, "iframe")
-        if iframe:
-            nav.switch_to.frame(iframe[0])
-            inputs = nav.find_elements(By.TAG_NAME,"input")
-            
-            for i in inputs:
-                atributo = i.get_attribute("type")
-                print(atributo)
-                if atributo == "checkbox":
-                    print(Fore.CYAN + "Captcha no verificado, checkbox encontrada" + Style.RESET_ALL)
-                    break
-            captcha = i
-            captcha.click()
-            sleep(5)
-            nav.switch_to.default_content()
-            print(Fore.CYAN + "Captcha verificado con intervencion" + Style.RESET_ALL)
-        else:
-            print(Fore.CYAN + "Captcha verificado sin intervencion" + Style.RESET_ALL)
-        return True
-    else:
-        return False
-
-def unistats(nick: str, nav: webdriver.Firefox):
+def unistats(nick: str):
+    global token
     url = "https://stats.universocraft.com/jugador/" + nick
-    url_error = 'https://stats.universocraft.com/?error=true'
-    nav.get(url)
-    sleep(1.5)
-    detectar_captcha(nav)
-    pagina = BeautifulSoup(nav.page_source, 'html.parser')
-    tag_rango = pagina.find('span', class_="ProfileTag TagRank")
-    tiempo_de_espera = 0
-    while not tag_rango and nav.current_url != url_error:
-        sleep(0.1)
-        tag_rango = pagina.find('span', class_="ProfileTag TagRank")
-        tiempo_de_espera += 0.1
-        if tiempo_de_espera >= 3:
-            print(Fore.RED + "Error de carga de pagina" + Style.RESET_ALL)
-            return unistats(nick, nav)
-    if nav.current_url == url_error:
-        return (None, None)
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, zstd",
+        "Accept-Language": "es-ES,es;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Content-Length": "7014",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Cookie": "cf_clearance=ihg_Ea2kXwBuk406bd9BhKLrTGWQTmO4GrB8ogSNgHs-1717689522-1.0.1.1-TEPa2iDggfVy_Ny32JKomYAsHaQIVGQrq5TRCpXHC5kYs6ghhkr2Ss.BrijUtBAxezf2unqhgFvoAN0bR0otRg",
+        "Origin": "https://stats.universocraft.com",
+        "Priority": "u=0, i",
+        "Sec-Ch-Ua": '"Brave";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Model": '""',
+        "Sec-Ch-Ua-Platform": '"Linux"',
+        "Sec-Ch-Ua-Platform-Version": '"6.5.0"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-User": "?1",
+        "Sec-Gpc": "1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    }
+
+    session = requests.Session()
+    session.headers.update(headers)
+    try:
+        respuesta = session.get(url)
+        respuesta.raise_for_status() # Errores HTTP
+        if not respuesta:
+            print(Fore.YELLOW + "Error 403" + Style.RESET_ALL)
+            token = obtener_token()
+            return unistats(nick)
+    except requests.RequestException as e:
+        
+        print(f"Error fetching the webpage: {e}")
+        return f'ERROR'
+
+    url_error = "https://stats.universocraft.com/?error=true"
+    if respuesta.url == url_error:
+        return ('NO ENCONTRADO', None)
+
     
+    pagina = BeautifulSoup(respuesta.text, 'html.parser')
+
     tag_premium = pagina.find('span', class_="ProfileTag TagPremium")
     if tag_premium:
         premium = 'SI'
     else:
         premium = 'NO'
+    
+    tag_rango = pagina.find('span', class_="ProfileTag TagRank")
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
     return (rango, premium)
 
@@ -100,7 +99,7 @@ def texto_rango(rango:str) -> str | None:
             texto_rango = f"NR{rango}"
     return texto_rango
 
-def scraper(nav: webdriver.Firefox):
+def scraper():
     try:
         try:
             locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
@@ -112,7 +111,7 @@ def scraper(nav: webdriver.Firefox):
         while querry:
             cursor.execute(querry)
             usuario = cursor.fetchone()[0]
-            ret = unistats(usuario, nav)
+            ret = unistats(usuario)
             if ret == 'ERROR':
                 continue
             rango = ret[0]
@@ -136,7 +135,6 @@ def scraper(nav: webdriver.Firefox):
             print(s, end='')
     except Exception as e:
         print(e)
-        nav.close()
         sleep(3)
         db.commit()
         db.close()
@@ -146,6 +144,5 @@ def scraper(nav: webdriver.Firefox):
 
 
 if __name__ == '__main__':
-    nav = lanzar_navegador()
-    scraper(nav)
-    nav.close()
+    token = obtener_token()
+    scraper()
