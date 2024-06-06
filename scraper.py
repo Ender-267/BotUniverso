@@ -17,12 +17,11 @@ def unistats(nick: str):
     url = "https://stats.universocraft.com/jugador/" + nick
     headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Encoding": "gzip, deflate, zstd",
         "Accept-Language": "es-ES,es;q=0.5",
         "Cache-Control": "max-age=0",
-        "Cookie": "cf_clearance=1HkrGZwluwPbn1PG7SkCCxojxlk7geZjcyZMNC9W574-1717689721-1.0.1.1-XHBj.3Vplyh5exCGXFVgTKYTVATqKZdXyj2y.FGyDVJcqPSTo0n49z5keCZeb6D91DqQVFqsoU5uudNWpqEgnw",
+        "Cookie": token,
         "Priority": "u=0, i",
-        "Referer": "https://stats.universocraft.com/players?name=Ender267&__cf_chl_tk=x.aByWNGMk7o9qQst8SIwVG4a.6OpXQWR6DbRjsY05s-1717689721-0.0.1.1-3945",
         "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Brave";v="126"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Model": '""',
@@ -47,13 +46,13 @@ def unistats(nick: str):
             token = obtener_token()
             return unistats(nick)
     except requests.RequestException as e:
-        
         print(f"Error fetching the webpage: {e}")
-        return f'ERROR'
+        sleep(5)
+        return 'ERROR'
 
     url_error = "https://stats.universocraft.com/?error=true"
     if respuesta.url == url_error:
-        return ('NO ENCONTRADO', None)
+        return (None, None)
 
     
     pagina = BeautifulSoup(respuesta.text, 'html.parser')
@@ -109,6 +108,7 @@ def scraper():
         while querry:
             cursor.execute(querry)
             usuario = cursor.fetchone()[0]
+            sleep(1.2)
             ret = unistats(usuario)
             if ret == 'ERROR':
                 continue
