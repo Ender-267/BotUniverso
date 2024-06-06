@@ -17,26 +17,24 @@ def unistats(nick: str):
     url = "https://stats.universocraft.com/jugador/" + nick
     headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, zstd",
-        "Accept-Language": "es-ES,es;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "es-ES,es;q=0.5",
         "Cache-Control": "max-age=0",
-        "Content-Length": "7014",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": "cf_clearance=ihg_Ea2kXwBuk406bd9BhKLrTGWQTmO4GrB8ogSNgHs-1717689522-1.0.1.1-TEPa2iDggfVy_Ny32JKomYAsHaQIVGQrq5TRCpXHC5kYs6ghhkr2Ss.BrijUtBAxezf2unqhgFvoAN0bR0otRg",
-        "Origin": "https://stats.universocraft.com",
+        "Cookie": "cf_clearance=1HkrGZwluwPbn1PG7SkCCxojxlk7geZjcyZMNC9W574-1717689721-1.0.1.1-XHBj.3Vplyh5exCGXFVgTKYTVATqKZdXyj2y.FGyDVJcqPSTo0n49z5keCZeb6D91DqQVFqsoU5uudNWpqEgnw",
         "Priority": "u=0, i",
-        "Sec-Ch-Ua": '"Brave";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+        "Referer": "https://stats.universocraft.com/players?name=Ender267&__cf_chl_tk=x.aByWNGMk7o9qQst8SIwVG4a.6OpXQWR6DbRjsY05s-1717689721-0.0.1.1-3945",
+        "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Brave";v="126"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Model": '""',
-        "Sec-Ch-Ua-Platform": '"Linux"',
-        "Sec-Ch-Ua-Platform-Version": '"6.5.0"',
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Ch-Ua-Platform-Version": '"15.0.0"',
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "same-origin",
         "Sec-Fetch-User": "?1",
         "Sec-Gpc": "1",
         "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
     }
 
     session = requests.Session()
