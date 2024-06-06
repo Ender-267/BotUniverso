@@ -55,9 +55,7 @@ def unistats(nick: str):
         respuesta = session.get(url)
         if respuesta.status_code == 403:
             print(Fore.YELLOW + "Error 403 Forbidden" + Style.RESET_ALL)
-            token = None
-            while not token:
-                sleep(2)
+            obtener_token()
             return unistats(nick)
         elif respuesta.status_code == 404:
             print(Fore.RED + "Error 404 Not Found" + Style.RESET_ALL)
