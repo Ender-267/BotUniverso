@@ -11,7 +11,18 @@ with open(TEXTO_DE_FECHA, 'r') as archivo:
 db = sqlite3.connect(BASE_DE_DATOS_SQL)
 cursor = db.cursor()
 
-cursor.execute("SELECT usuario, rango, ip, contra FROM usuarios NATURAL JOIN datos WHERE rango IS NOT NULL AND rango != 'USU' AND rango != 'L/NE' AND rango != 'NO_ENCONTRADO' AND premium != 'N/LE' AND premium != 'NO_ENCONTRADO' AND fecha_lectura > datetime(?, '-1 minute') ORDER BY usuario", (fecha,))
+querry = '''
+SELECT usuario, rango, ip, contra 
+    FROM usuarios 
+    NATURAL JOIN datos 
+    WHERE rango IS NOT NULL 
+      AND rango NOT IN ('USU', 'L/NE', 'NO_ENCONTRADO') 
+      AND premium NOT IN ('N/LE', 'NO_ENCONTRADO', 'SI') 
+      AND fecha_lectura > datetime(?, '-1 minute') 
+    ORDER BY usuario
+'''
+
+cursor.execute(querry, (fecha,))
 
 with open(TEXTO_DE_FECHA, 'w') as archivo:
     s = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -28,3 +39,5 @@ with open(TEXTO_DE_RANGOS, 'w') as archivo:
             ip = 'NO_HAY_IP'
         escritura = "{:<16} {:<6} {:<16} {:<16}\n".format(usuario, rango, ip, contra)
         archivo.write(escritura)
+
+db.close()

@@ -158,5 +158,6 @@ def scraper():
 
 
 if __name__ == '__main__':
+    token = None
     obtener_token()
     scraper()
