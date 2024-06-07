@@ -14,6 +14,9 @@ def obtener_token():
     global token
     with open(TOKEN_TXT, 'r', encoding='utf-8') as archivo:
         datos = json.load(archivo)
+        if datos["token"] != token:
+            token = datos["token"]
+            return
     with open(TOKEN_TXT, 'w', encoding='utf-8') as archivo:
         datos["http_error"] = True
         json.dump(datos, archivo)
@@ -23,7 +26,6 @@ def obtener_token():
             datos = json.load(archivo)
             print(Fore.CYAN + "Lectura de token..." + Style.RESET_ALL)
             token = datos["token"]
-    
 
 def unistats(nick: str):
     global token
