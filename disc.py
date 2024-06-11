@@ -37,17 +37,24 @@ async def set_token(ctx, value: str):
     await ctx.send(f'Token se ha actualizado a: {value}')
 
 @bot.command(name='nick')
-async def set_token(ctx, value: str):
-    db = sqlite3.connect(BASE_DATOS)
-    cur = db.cursor()
-    querry = "SELECT contra, ip FROM usuarios NATURAL JOIN datos where usuario = ?"
-    cur.execute(querry, (value, ))
-    row = True
-    msg = ""
-    while row:
-        row = cur.fetchone()
-        msg += row + '\n'
-    await ctx.send(msg)
+async def nick(ctx, value: str):
+    try:
+        db = sqlite3.connect(BASE_DATOS)
+        cur = db.cursor()
+        query = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
+        cur.execute(query, (value,))
+        
+        rows = cur.fetchall()
+        if rows:
+            msg = "\n".join([f"contra: {row[0]}, ip: {row[1]}" for row in rows])
+        else:
+            msg = "No results found."
+        
+        await ctx.send(msg)
+    except sqlite3.Error as e:
+        await ctx.send(f"An error occurred: {e}")
+    finally:
+        db.close()
 
 
 
