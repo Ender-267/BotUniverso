@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 import json
 from sys import argv
 import sqlite3
+from asyncio import sleep
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,6 +13,17 @@ TOKEN_TXT = './token.json'
 BASE_DATOS = './base.db'
 
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+def querry_con_handling(cur: sqlite3.Cursor,querry: str, tupla: tuple = ()):
+    try:
+        cur.execute(querry, tupla)
+    except sqlite3.OperationalError as e:
+        if "database is locked" in str(e):
+            sleep(2)
+            return querry_con_handling(cur)
+        else:
+            raise
+    return cur
 
 @tasks.loop(seconds=2)
 async def comprobar_validez_token():
@@ -41,8 +53,9 @@ async def nick(ctx, value: str):
     try:
         db = sqlite3.connect(BASE_DATOS)
         cur = db.cursor()
-        query = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
-        cur.execute(query, (value,))
+        querry = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
+        tupla = (value,)
+        cur = querry_con_handling(cur, querry, tupla)
         
         rows = cur.fetchall()
         if rows:

@@ -114,13 +114,25 @@ def texto_rango(rango: str) -> str | None:
             texto_rango = f"NR{rango}"
     return texto_rango
 
+def querry_con_handling(cur: sqlite3.Cursor,querry: str, tupla: tuple = ()):
+    try:
+        cur.execute(querry, tupla)
+    except sqlite3.OperationalError as e:
+        if "database is locked" in str(e):
+            print(f"{Fore.YELLOW}Base de datos bloqueada{Style.RESET_ALL}")
+            sleep(2)
+            return querry_con_handling(cur)
+        else:
+            raise
+    return cur
+
 def scraper():
     try:
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
-            querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
             while True:
-                cursor.execute(querry)
+                querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
+                cursor = querry_con_handling(cursor, querry)
                 usuario = cursor.fetchone()[0]
                 if not usuario:
                     print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
@@ -133,7 +145,9 @@ def scraper():
                 premium = ret[1]
                 fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 if not premium and not rango:
-                    cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario))
+                    querry = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
+                    tupla = ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario)
+                    cursor = querry_con_handling(cursor, querry, tupla)
                     db.commit()
                     print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
                     continue
@@ -144,7 +158,9 @@ def scraper():
                         texto_premium = "NO_PREMIUM"
                     case _:
                         texto_premium = "WTF"
-                cursor.execute("UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?", (rango, premium, fecha, usuario))
+                querry = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
+                tupla = (rango, premium, fecha, usuario)
+                cursor = querry_con_handling(cursor, querry, tupla)
                 db.commit()
                 s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
                 print(s, end='')
