@@ -61,11 +61,11 @@ async def nick(ctx, value: str):
         if rows:
             msg = "\n".join([f"contra: {row[0]}, ip: {row[1]}" for row in rows])
         else:
-            msg = "No results found."
+            msg = "No se encontraron resultados"
         
         await ctx.send(msg)
     except sqlite3.Error as e:
-        await ctx.send(f"An error occurred: {e}")
+        await ctx.send(f"Error de sql: {e}")
     finally:
         db.close()
 
