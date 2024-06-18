@@ -32,24 +32,24 @@ def unistats(nick: str):
     url = "https://stats.universocraft.com/jugador/" + nick
     headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, zstd",
-        "Accept-Language": "es-ES,es;q=0.5",
-        "Cache-Control": "max-age=0",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "es-ES,es;q=0.6",
         "Cookie": token,
         "Priority": "u=0, i",
-        "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Brave";v="126"',
+        "Sec-Ch-Ua": '"Not A;Brand";v="99", "Chromium";v="125", "Google Chrome";v="125"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Model": '""',
         "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Ch-Ua-Platform-Version": '"15.0.0"',
+        "Sec-Ch-Ua-Platform-Version": '"10.0"',
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
         "Sec-Gpc": "1",
         "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     }
+
 
     session = requests.Session()
     session.headers.update(headers)
@@ -126,17 +126,34 @@ def querry_con_handling(cur: sqlite3.Cursor,querry: str, tupla: tuple = ()):
             raise
     return cur
 
+def generar_queue():
+    try:
+        with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
+            cursor = db.cursor()
+            querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 10000"
+            cursor = querry_con_handling(cursor, querry)
+            queue = cursor.fetchall()
+            print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
+            return queue
+    except Exception as e:
+        print(e)
+        sleep(3)
+        db.commit()
+        db.close()
+        return
+
 def scraper():
+    queue = generar_queue()
     try:
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
             while True:
-                querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 1"
-                cursor = querry_con_handling(cursor, querry)
-                usuario = cursor.fetchone()[0]
-                if not usuario:
-                    print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
-                    return
+                if not queue or len(queue) == 0:
+                    queue = querry_con_handling()
+                    if len(queue) == 0:
+                        print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
+                        return
+                usuario = queue.pop()
                 sleep(1.2)
                 ret = unistats(usuario)
                 if ret == 'ERROR':
@@ -145,9 +162,9 @@ def scraper():
                 premium = ret[1]
                 fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 if not premium and not rango:
-                    querry = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
+                    query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                     tupla = ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario)
-                    cursor = querry_con_handling(cursor, querry, tupla)
+                    cursor = querry_con_handling(cursor, query, tupla)
                     db.commit()
                     print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
                     continue
@@ -158,9 +175,9 @@ def scraper():
                         texto_premium = "NO_PREMIUM"
                     case _:
                         texto_premium = "WTF"
-                querry = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
+                query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                 tupla = (rango, premium, fecha, usuario)
-                cursor = querry_con_handling(cursor, querry, tupla)
+                cursor = querry_con_handling(cursor, query, tupla)
                 db.commit()
                 s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
                 print(s, end='')

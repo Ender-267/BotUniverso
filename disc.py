@@ -50,25 +50,69 @@ async def set_token(ctx, value: str):
 
 @bot.command(name='nick')
 async def nick(ctx, value: str):
+    value = value.lower()
     try:
-        db = sqlite3.connect(BASE_DATOS)
-        cur = db.cursor()
-        querry = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
-        tupla = (value,)
-        cur = querry_con_handling(cur, querry, tupla)
-        
-        rows = cur.fetchall()
-        if rows:
-            msg = "\n".join([f"contra: {row[0]}, ip: {row[1]}" for row in rows])
-        else:
-            msg = "No se encontraron resultados"
-        
-        await ctx.send(msg)
+        with sqlite3.connect(BASE_DATOS) as db:
+            cur = db.cursor()
+            query = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
+            tupla = (value,)
+            querry_con_handling(cur, query, tupla)
+            
+            rows = cur.fetchall()
+            if rows:
+                msgs = []
+                current_msg = "```\n"
+                for row in rows:
+                    line = f"contra: {row[0]}, ip: {row[1]}\n"
+                    if len(current_msg) + len(line) + 3 > 2000:
+                        current_msg += "```"
+                        msgs.append(current_msg)
+                        current_msg = "```\n" + line
+                    else:
+                        current_msg += line
+                if current_msg:
+                    current_msg += "```"
+                    msgs.append(current_msg)
+                
+                for msg in msgs:
+                    await ctx.send(msg)
+            else:
+                await ctx.send("No se encontraron resultados")
     except sqlite3.Error as e:
-        await ctx.send(f"Error de sql: {e}")
-    finally:
-        db.close()
+        await ctx.send(f"Error de SQL: {e}")
 
+@bot.command(name='ip')
+async def ip(ctx, value: str):
+    value = value.lower()
+    try:
+        with sqlite3.connect(BASE_DATOS) as db:
+            cur = db.cursor()
+            query = "SELECT contra, usuario FROM usuarios NATURAL JOIN datos WHERE ip = ?"
+            tupla = (value,)
+            querry_con_handling(cur, query, tupla)
+            
+            rows = cur.fetchall()
+            if rows:
+                msgs = []
+                current_msg = "```\n"
+                for row in rows:
+                    line = f"nick: {row[1]}, contra: {row[0]}\n"
+                    if len(current_msg) + len(line) + 3 > 2000:  # Adding 3 for closing backticks
+                        current_msg += "```"
+                        msgs.append(current_msg)
+                        current_msg = "```\n" + line
+                    else:
+                        current_msg += line
+                if current_msg:
+                    current_msg += "```"
+                    msgs.append(current_msg)
+                
+                for msg in msgs:
+                    await ctx.send(msg)
+            else:
+                await ctx.send("No se encontraron resultados")
+    except sqlite3.Error as e:
+        await ctx.send(f"Error de SQL: {e}")
 
 
 @bot.event
