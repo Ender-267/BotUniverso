@@ -148,12 +148,12 @@ def scraper():
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
             while True:
-                if not queue or len(queue) == 0:
-                    queue = querry_con_handling()
+                if len(queue) == 0:
+                    queue = generar_queue()
                     if len(queue) == 0:
                         print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
                         return
-                usuario = queue.pop()
+                usuario = queue.pop()[0]
                 sleep(1.2)
                 ret = unistats(usuario)
                 if ret == 'ERROR':
