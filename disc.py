@@ -1,41 +1,50 @@
 import discord
 from discord.ext import commands, tasks
 import json
-from sys import argv
 import sqlite3
 from asyncio import sleep
+from colorama import Fore, Style
 
-intents = discord.Intents.default()
-intents.message_content = True
-
-ID_CANAL_TOKEN: int = 1246869970340806686
+# Constants
+ID_CANAL_TOKEN = 1246869970340806686
 TOKEN_TXT = './token.json'
 BASE_DATOS = './base.db'
 
+# Discord bot setup
+intents = discord.Intents.default()
+intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-def querry_con_handling(cur: sqlite3.Cursor,querry: str, tupla: tuple = ()):
+# Global variable to manage token message
+mandar_mensage = True
+
+# Helper function to handle SQLite queries
+async def query_con_handling(cur: sqlite3.Cursor, query: str, tupla: tuple = ()):
     try:
-        cur.execute(querry, tupla)
+        cur.execute(query, tupla)
+        cur.connection.commit()
     except sqlite3.OperationalError as e:
         if "database is locked" in str(e):
-            sleep(2)
-            return querry_con_handling(cur)
+            print(f"{Fore.YELLOW}Base de datos bloqueada{Style.RESET_ALL}")
+            await sleep(2)
+            return await query_con_handling(cur, query, tupla)
         else:
             raise
     return cur
 
+# Background task to check token validity
 @tasks.loop(seconds=2)
 async def comprobar_validez_token():
     global mandar_mensage
     with open(TOKEN_TXT, 'r') as archivo:
         datos = json.load(archivo)
-    if datos["http_error"] and mandar_mensage:
+    if datos.get("http_error") and mandar_mensage:
         canal = bot.get_channel(ID_CANAL_TOKEN)
         if canal:
             await canal.send('Inserte token!!')
             mandar_mensage = False
 
+# Command to set token
 @bot.command(name='token')
 async def set_token(ctx, value: str):
     global mandar_mensage
@@ -48,6 +57,7 @@ async def set_token(ctx, value: str):
         mandar_mensage = True
     await ctx.send(f'Token se ha actualizado a: {value}')
 
+# Command to search by nickname
 @bot.command(name='nick')
 async def nick(ctx, value: str):
     value = value.lower()
@@ -56,7 +66,7 @@ async def nick(ctx, value: str):
             cur = db.cursor()
             query = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
             tupla = (value,)
-            querry_con_handling(cur, query, tupla)
+            await query_con_handling(cur, query, tupla)
             
             rows = cur.fetchall()
             if rows:
@@ -81,6 +91,7 @@ async def nick(ctx, value: str):
     except sqlite3.Error as e:
         await ctx.send(f"Error de SQL: {e}")
 
+# Command to search by IP
 @bot.command(name='ip')
 async def ip(ctx, value: str):
     value = value.lower()
@@ -89,7 +100,7 @@ async def ip(ctx, value: str):
             cur = db.cursor()
             query = "SELECT contra, usuario FROM usuarios NATURAL JOIN datos WHERE ip = ?"
             tupla = (value,)
-            querry_con_handling(cur, query, tupla)
+            await query_con_handling(cur, query, tupla)
             
             rows = cur.fetchall()
             if rows:
@@ -114,14 +125,17 @@ async def ip(ctx, value: str):
     except sqlite3.Error as e:
         await ctx.send(f"Error de SQL: {e}")
 
-
+# Event triggered when bot is ready
 @bot.event
 async def on_ready():
     print(f'Logueado como {bot.user}')
     comprobar_validez_token.start()
 
-
+# Main entry point
 if __name__ == '__main__':
-    token_bot = argv[1]
-    mandar_mensage = True
-    bot.run(token_bot)
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python filename.py <TOKEN>")
+    else:
+        token_bot = sys.argv[1]
+        bot.run(token_bot)

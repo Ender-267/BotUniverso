@@ -32,7 +32,7 @@ def unistats(nick: str):
     url = "https://stats.universocraft.com/jugador/" + nick
     headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Encoding": "gzip, deflate, zstd",
         "Accept-Language": "es-ES,es;q=0.6",
         "Cookie": token,
         "Priority": "u=0, i",
@@ -81,6 +81,10 @@ def unistats(nick: str):
         premium = 'NO'
 
     tag_rango = pagina.find('span', class_="ProfileTag TagRank")
+    if not tag_rango:
+        print(Fore.YELLOW + "Error de carga de pagina desconocido" + Style.RESET_ALL)
+        sleep(2)
+        return unistats(nick)
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
     return (rango, premium)
 
@@ -114,14 +118,15 @@ def texto_rango(rango: str) -> str | None:
             texto_rango = f"NR{rango}"
     return texto_rango
 
-def querry_con_handling(cur: sqlite3.Cursor,querry: str, tupla: tuple = ()):
+def query_con_handling(cur: sqlite3.Cursor, query: str, tupla: tuple = ()):
     try:
-        cur.execute(querry, tupla)
+        cur.execute(query, tupla)
+        cur.connection.commit()
     except sqlite3.OperationalError as e:
         if "database is locked" in str(e):
             print(f"{Fore.YELLOW}Base de datos bloqueada{Style.RESET_ALL}")
             sleep(2)
-            return querry_con_handling(cur)
+            return query_con_handling(cur, query, tupla)
         else:
             raise
     return cur
@@ -131,7 +136,7 @@ def generar_queue():
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
             querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 10000"
-            cursor = querry_con_handling(cursor, querry)
+            cursor = query_con_handling(cursor, querry)
             queue = cursor.fetchall()
             print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
             return queue
@@ -154,6 +159,8 @@ def scraper():
                         print(Fore.YELLOW + "La querry SQL no retorno ningun usuario"+ Style.RESET_ALL)
                         return
                 usuario = queue.pop()[0]
+                if usuario is None:
+                    continue
                 sleep(1.2)
                 ret = unistats(usuario)
                 if ret == 'ERROR':
@@ -164,8 +171,7 @@ def scraper():
                 if not premium and not rango:
                     query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                     tupla = ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario)
-                    cursor = querry_con_handling(cursor, query, tupla)
-                    db.commit()
+                    cursor = query_con_handling(cursor, query, tupla)
                     print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
                     continue
                 match premium:
@@ -177,8 +183,7 @@ def scraper():
                         texto_premium = "WTF"
                 query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                 tupla = (rango, premium, fecha, usuario)
-                cursor = querry_con_handling(cursor, query, tupla)
-                db.commit()
+                cursor = query_con_handling(cursor, query, tupla)
                 s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
                 print(s, end='')
     except Exception as e:

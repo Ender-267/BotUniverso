@@ -1,9 +1,25 @@
 import sqlite3
 from datetime import datetime
+from colorama import Fore, Style
+from time import sleep
+
 
 BASE_DE_DATOS_SQL = './base.db'
 TEXTO_DE_FECHA = './fecha.txt'
 TEXTO_DE_RANGOS = './rangos_' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.txt'
+
+def query_con_handling(cur: sqlite3.Cursor, query: str, tupla: tuple = ()):
+    try:
+        cur.execute(query, tupla)
+        cur.connection.commit()
+    except sqlite3.OperationalError as e:
+        if "database is locked" in str(e):
+            print(f"{Fore.YELLOW}Base de datos bloqueada{Style.RESET_ALL}")
+            sleep(2)
+            return query_con_handling(cur, query, tupla)
+        else:
+            raise
+    return cur
 
 with open(TEXTO_DE_FECHA, 'r') as archivo:
     fecha = archivo.read()
@@ -21,8 +37,9 @@ SELECT usuario, rango, ip, contra
       AND fecha_lectura > datetime(?, '-1 minute') 
     ORDER BY usuario
 '''
+tupla = (fecha,)
 
-cursor.execute(querry, (fecha,))
+cursor = query_con_handling(cursor, querry, tupla)
 
 with open(TEXTO_DE_FECHA, 'w') as archivo:
     s = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
