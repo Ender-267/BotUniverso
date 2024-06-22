@@ -46,12 +46,20 @@ async def comprobar_validez_token():
 
 # Command to set token
 @bot.command(name='token')
-async def set_token(ctx, value: str):
+async def set_token(ctx, ip: str, value: str):
     global mandar_mensage
+    MAX_HEADER = 1
+    try:
+        ip = int(ip)
+        if not 0 <= ip <= MAX_HEADER:
+            raise ValueError
+    except Exception:
+        await ctx.send(f'Error de id de header')
     with open(TOKEN_TXT, 'w') as archivo:
         jsond = {
             "http_error": False,
-            "token": value
+            "token": value,
+            "header_id": ip
         }
         json.dump(jsond, archivo)
         mandar_mensage = True

@@ -12,10 +12,12 @@ TOKEN_TXT = './token.json'
     
 def obtener_token():
     global token
+    global header_id
     with open(TOKEN_TXT, 'r', encoding='utf-8') as archivo:
         datos = json.load(archivo)
         if datos["token"] != token:
             token = datos["token"]
+            header_id = datos["header_id"]
             return
     with open(TOKEN_TXT, 'w', encoding='utf-8') as archivo:
         datos["http_error"] = True
@@ -26,33 +28,36 @@ def obtener_token():
             datos = json.load(archivo)
             print(Fore.CYAN + "Lectura de token..." + Style.RESET_ALL)
             token = datos["token"]
+            header_id = datos["header_id"]
 
 def unistats(nick: str):
     global token
-    url = "https://stats.universocraft.com/jugador/" + nick
-    headers = {
+    global header_id
+    headers = (
+        {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8",
+        "Accept-Encoding": "gzip, deflate, zstd",
+        "Accept-Language": "es-ES,es;q=0.6",
+        "Cache-Control": "max-age=0",
+        "Origin": "https://stats.universocraft.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    },
+    {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, zstd",
         "Accept-Language": "es-ES,es;q=0.6",
-        "Cookie": token,
-        "Priority": "u=0, i",
-        "Sec-Ch-Ua": '"Not A;Brand";v="99", "Chromium";v="125", "Google Chrome";v="125"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Model": '""',
-        "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Ch-Ua-Platform-Version": '"10.0"',
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Sec-Gpc": "1",
-        "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+        "Cache-Control": "max-age=0",
+        "Origin": "https://stats.universocraft.com",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
     }
+    )
+    url = "https://stats.universocraft.com/jugador/" + nick
+    header = headers[header_id]
+    header["Cookie"] = "cf_clearance=" + token
 
 
     session = requests.Session()
-    session.headers.update(headers)
+    session.headers.update(header)
     try:
         respuesta = session.get(url)
         if respuesta.status_code == 403:
