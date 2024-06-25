@@ -59,6 +59,8 @@ def convert_date(fecha_str):
     
     hora = hora.replace('.', '').split(' ')
     hora = hora[0] + ' ' + hora[1]
+    if hora.startswith('00'):
+        hora = '12' + hora[2:]
     time_obj = datetime.strptime(hora, '%I:%M %p')
     time_24hr = time_obj.strftime('%H:%M:%S')
     
@@ -112,7 +114,7 @@ def unistats(nick: str):
 
     url_error = "https://stats.universocraft.com/?error=true"
     if respuesta.url == url_error:
-        return (None, None)
+        return 'NO ENCONTRADO'
 
     pagina = BeautifulSoup(respuesta.text, 'html.parser')
 
@@ -195,7 +197,7 @@ def generar_queue():
     try:
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
-            querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 10000"
+            querry = "SELECT usuario FROM usuarios WHERE premium='SI' ORDER BY RANDOM() LIMIT 10000"
             cursor = query_con_handling(cursor, querry)
             queue = cursor.fetchall()
             print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
@@ -225,15 +227,18 @@ def scraper():
                 ret = unistats(usuario)
                 if ret == 'ERROR':
                     continue
-                rango = ret[0]
-                premium = ret[1]
-                fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                if not premium and not rango:
+                if ret == 'NO ENCONTRADO':
                     query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                     tupla = ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario)
                     cursor = query_con_handling(cursor, query, tupla)
                     print("{:<16} {}NO ENCONTRADO{}".format(usuario, Fore.RED, Style.RESET_ALL))
                     continue
+                rango = ret['rango']
+                premium = ret['premium']
+                fecha_prim = ret['fecha_prim']
+                fecha_last = ret['fecha_last']
+                fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
                 match premium:
                     case 'SI':
                         texto_premium = "PREMIUM"
@@ -241,8 +246,8 @@ def scraper():
                         texto_premium = "NO_PREMIUM"
                     case _:
                         texto_premium = "WTF"
-                query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
-                tupla = (rango, premium, fecha, usuario)
+                query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=?, fecha_ultima_con=?, fecha_primer_login=? WHERE usuario=?"
+                tupla = (rango, premium, fecha, usuario, fecha_last, fecha_prim)
                 cursor = query_con_handling(cursor, query, tupla)
                 s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
                 print(s, end='')
@@ -258,4 +263,4 @@ def scraper():
 if __name__ == '__main__':
     token = None
     obtener_token()
-    print(unistats('crack'))
+    scraper()
