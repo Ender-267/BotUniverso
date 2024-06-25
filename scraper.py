@@ -197,7 +197,7 @@ def generar_queue():
     try:
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
-            querry = "SELECT usuario FROM usuarios WHERE premium='SI' ORDER BY RANDOM() LIMIT 10000"
+            querry = querry = "SELECT usuario FROM usuarios WHERE rango IS NULL ORDER BY RANDOM() LIMIT 10000"
             cursor = query_con_handling(cursor, querry)
             queue = cursor.fetchall()
             print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
@@ -227,6 +227,7 @@ def scraper():
                 ret = unistats(usuario)
                 if ret == 'ERROR':
                     continue
+                fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 if ret == 'NO ENCONTRADO':
                     query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=? WHERE usuario=?"
                     tupla = ('NO_ENCONTRADO', 'NO_ENCONTRADO', fecha, usuario)
@@ -237,8 +238,7 @@ def scraper():
                 premium = ret['premium']
                 fecha_prim = ret['fecha_prim']
                 fecha_last = ret['fecha_last']
-                fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    
+                  
                 match premium:
                     case 'SI':
                         texto_premium = "PREMIUM"
@@ -246,8 +246,12 @@ def scraper():
                         texto_premium = "NO_PREMIUM"
                     case _:
                         texto_premium = "WTF"
-                query = "UPDATE usuarios SET rango=?, premium=?, fecha_lectura=?, fecha_ultima_con=?, fecha_primer_login=? WHERE usuario=?"
-                tupla = (rango, premium, fecha, usuario, fecha_last, fecha_prim)
+                query = """
+                    UPDATE usuarios 
+                    SET rango=?, premium=?, fecha_lectura=?, fecha_ultima_con=?, fecha_primer_login=? 
+                    WHERE usuario=?
+                """
+                tupla = (rango, premium, fecha, fecha_last, fecha_prim, usuario)
                 cursor = query_con_handling(cursor, query, tupla)
                 s = "{:<16} {:<8} {:<8}\n".format(usuario, texto_rango(rango), texto_premium)
                 print(s, end='')
