@@ -7,7 +7,7 @@ import requests
 from sys import argv
 import json
 
-BASE_DE_DATOS_SQL = './base.db'
+BASE_DE_DATOS_SQL = './neobase.db'
 TOKEN_TXT = './token.json'
     
 def obtener_token():
@@ -29,6 +29,43 @@ def obtener_token():
             print(Fore.CYAN + "Lectura de token..." + Style.RESET_ALL)
             token = datos["token"]
             header_id = datos["header_id"]
+
+def convert_date(fecha_str):
+    if '...' in fecha_str:
+        return '...'
+    fecha_str = fecha_str.replace('\n', ' - ')
+
+    fecha, hora = fecha_str.split(' - ')
+    
+    dia_mes, año = fecha.split(' del ')
+    dia, mes = dia_mes.split(' de ')
+    
+    meses_españoles = {
+        'Enero': '01',
+        'Febrero': '02',
+        'Marzo': '03',
+        'Abril': '04',
+        'Mayo': '05',
+        'Junio': '06',
+        'Julio': '07',
+        'Agosto': '08',
+        'Septiembre': '09',
+        'Octubre': '10',
+        'Noviembre': '11',
+        'Diciembre': '12'
+    }
+
+    mes = meses_españoles[mes]
+    
+    hora = hora.replace('.', '').split(' ')
+    hora = hora[0] + ' ' + hora[1]
+    time_obj = datetime.strptime(hora, '%I:%M %p')
+    time_24hr = time_obj.strftime('%H:%M:%S')
+    
+    fecha_final = f'{año}-{mes}-{dia} {time_24hr}'
+    
+    return fecha_final
+
 
 def unistats(nick: str):
     global token
@@ -91,7 +128,25 @@ def unistats(nick: str):
         sleep(2)
         return unistats(nick)
     rango = tag_rango.text.replace('\n', '').replace(' ', '')
-    return (rango, premium)
+
+    tag_fecha_last = pagina.find('pre', class_="ProfileMainStat__Value")
+    fecha_last = tag_fecha_last.text
+    fecha_last = convert_date(fecha_last)
+
+    tag_fecha_prim = pagina.find_all('p', class_="ProfileStat__Value")
+    if len(tag_fecha_prim) == 3:
+        tag_fecha_prim = tag_fecha_prim[1]
+        fecha_prim = convert_date(tag_fecha_prim.text)
+    else:
+        fecha_prim = '...'
+
+    ret_dict = {
+        'rango': rango,
+        'premium': premium,
+        'fecha_last': fecha_last,
+        'fecha_prim': fecha_prim
+    }
+    return ret_dict
 
 
 def texto_rango(rango: str) -> str | None:
@@ -203,4 +258,4 @@ def scraper():
 if __name__ == '__main__':
     token = None
     obtener_token()
-    scraper()
+    print(unistats('crack'))
