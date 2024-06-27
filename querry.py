@@ -4,7 +4,7 @@ from colorama import Fore, Style
 from time import sleep
 
 
-BASE_DE_DATOS_SQL = './base.db'
+BASE_DE_DATOS_SQL = './neobase.db'
 TEXTO_DE_FECHA = './fecha.txt'
 TEXTO_DE_RANGOS = './rangos_' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.txt'
 
