@@ -5,9 +5,7 @@ import pandas as pd
 
 BASE_DE_DATOS_SQL = './base.db'
 TXT_HYCRAFT = './hycraft.txt'
-TXT_RANGOS = './rangos.txt'
 TXT_OMEGACRAFT = './OmegaCraft.json'
-TXT_LISTA_LEIDOS = './n2_hycraft.txt'
 
 
 class Usuario:

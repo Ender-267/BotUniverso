@@ -8,7 +8,7 @@ from colorama import Fore, Style
 # Constants
 ID_CANAL_TOKEN = 1246869970340806686
 TOKEN_TXT = './token.json'
-BASE_DATOS = './base.db'
+BASE_DATOS = './neobase.db'
 
 # Discord bot setup
 intents = discord.Intents.default()
@@ -48,7 +48,7 @@ async def comprobar_validez_token():
 @bot.command(name='token')
 async def set_token(ctx, ip: str, value: str):
     global mandar_mensage
-    MAX_HEADER = 1
+    MAX_HEADER = 2
     try:
         ip = int(ip)
         if not 0 <= ip <= MAX_HEADER:
