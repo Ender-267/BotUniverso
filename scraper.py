@@ -7,7 +7,7 @@ import requests
 from sys import argv
 import json
 
-BASE_DE_DATOS_SQL = './neobase.db'
+BASE_DE_DATOS_SQL = './base_v3.db'
 TOKEN_TXT = './token.json'
     
 def obtener_token():
