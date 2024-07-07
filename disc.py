@@ -1,14 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import discord
 from discord.ext import commands, tasks
 import json
 import sqlite3
 from asyncio import sleep
 from colorama import Fore, Style
+import hashlib
+import os
+from prettytable import PrettyTable
 
 # Constants
 ID_CANAL_TOKEN = 1246869970340806686
 TOKEN_TXT = './token.json'
-BASE_DATOS = './neobase.db'
+BASE_DATOS = './base_v3.db'
 
 # Discord bot setup
 intents = discord.Intents.default()
@@ -31,6 +36,23 @@ async def query_con_handling(cur: sqlite3.Cursor, query: str, tupla: tuple = ())
         else:
             raise
     return cur
+
+def crear_archivo(headers, fetchall):
+    tabla = PrettyTable()
+    tabla.field_names = headers
+    tabla.align = 'l'
+    for row in fetchall:
+        tabla.add_row(row)
+    
+    tabla_str = tabla.get_string()
+
+    md5_hash = hashlib.md5(tabla_str.encode()).hexdigest()
+    nombre_archivo = f"message_buffer/{md5_hash}.txt"
+
+    with open(nombre_archivo, 'w', encoding='utf-8') as f:
+        f.write(tabla_str)
+    
+    return nombre_archivo
 
 # Background task to check token validity
 @tasks.loop(seconds=2)
@@ -65,6 +87,11 @@ async def set_token(ctx, ip: str, value: str):
         mandar_mensage = True
     await ctx.send(f'Token se ha actualizado a: {value}')
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        pass
+
 # Command to search by nickname
 @bot.command(name='nick')
 async def nick(ctx, value: str):
@@ -72,28 +99,17 @@ async def nick(ctx, value: str):
     try:
         with sqlite3.connect(BASE_DATOS) as db:
             cur = db.cursor()
-            query = "SELECT contra, ip FROM usuarios NATURAL JOIN datos WHERE usuario = ?"
+            query = "SELECT usuario, contra, ip, db_proveniente, tipo_contra FROM usuarios NATURAL JOIN datos WHERE usuario GLOB ? ORDER BY usuario LIMIT 100000"
             tupla = (value,)
             await query_con_handling(cur, query, tupla)
-            
             rows = cur.fetchall()
             if rows:
-                msgs = []
-                current_msg = "```\n"
-                for row in rows:
-                    line = f"contra: {row[0]}, ip: {row[1]}\n"
-                    if len(current_msg) + len(line) + 3 > 2000:
-                        current_msg += "```"
-                        msgs.append(current_msg)
-                        current_msg = "```\n" + line
-                    else:
-                        current_msg += line
-                if current_msg:
-                    current_msg += "```"
-                    msgs.append(current_msg)
-                
-                for msg in msgs:
-                    await ctx.send(msg)
+                archivo = crear_archivo(('usuario', 'contraseña', 'ip', 'base de datos', 'tipo de hash'), rows)
+                await ctx.send(file=discord.File(archivo))
+                try:
+                    os.remove(archivo)
+                except FileNotFoundError:
+                    pass
             else:
                 await ctx.send("No se encontraron resultados")
     except sqlite3.Error as e:
@@ -106,28 +122,38 @@ async def ip(ctx, value: str):
     try:
         with sqlite3.connect(BASE_DATOS) as db:
             cur = db.cursor()
-            query = "SELECT contra, usuario FROM usuarios NATURAL JOIN datos WHERE ip = ?"
+            query = "SELECT usuario, contra, ip, db_proveniente, tipo_contra FROM usuarios NATURAL JOIN datos WHERE ip GLOB ? ORDER BY ip LIMIT 100000"
             tupla = (value,)
             await query_con_handling(cur, query, tupla)
-            
             rows = cur.fetchall()
             if rows:
-                msgs = []
-                current_msg = "```\n"
-                for row in rows:
-                    line = f"nick: {row[1]}, contra: {row[0]}\n"
-                    if len(current_msg) + len(line) + 3 > 2000:  # Adding 3 for closing backticks
-                        current_msg += "```"
-                        msgs.append(current_msg)
-                        current_msg = "```\n" + line
-                    else:
-                        current_msg += line
-                if current_msg:
-                    current_msg += "```"
-                    msgs.append(current_msg)
-                
-                for msg in msgs:
-                    await ctx.send(msg)
+                archivo = crear_archivo(('usuario', 'contraseña', 'ip', 'base de datos', 'tipo de hash'), rows)
+                await ctx.send(file=discord.File(archivo))
+                try:
+                    os.remove(archivo)
+                except FileNotFoundError:
+                    pass
+            else:
+                await ctx.send("No se encontraron resultados")
+    except sqlite3.Error as e:
+        await ctx.send(f"Error de SQL: {e}")
+
+@bot.command(name='pass')
+async def ip(ctx, value: str):
+    try:
+        with sqlite3.connect(BASE_DATOS) as db:
+            cur = db.cursor()
+            query = "SELECT usuario, contra, ip, db_proveniente, tipo_contra FROM usuarios NATURAL JOIN datos WHERE contra GLOB ? ORDER BY contra LIMIT 100000"
+            tupla = (value,)
+            await query_con_handling(cur, query, tupla)
+            rows = cur.fetchall()
+            if rows:
+                archivo = crear_archivo(('usuario', 'contraseña', 'ip', 'base de datos', 'tipo de hash'), rows)
+                await ctx.send(file=discord.File(archivo))
+                try:
+                    os.remove(archivo)
+                except FileNotFoundError:
+                    pass
             else:
                 await ctx.send("No se encontraron resultados")
     except sqlite3.Error as e:
