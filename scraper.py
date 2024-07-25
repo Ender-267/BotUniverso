@@ -23,10 +23,9 @@ def obtener_token():
         datos["http_error"] = True
         json.dump(datos, archivo)
     while datos["http_error"]:
-        sleep(5)
+        sleep(2)
         with open(TOKEN_TXT, 'r', encoding='utf-8') as archivo:
             datos = json.load(archivo)
-            print(Fore.CYAN + "Lectura de token..." + Style.RESET_ALL)
             token = datos["token"]
             header_id = datos["header_id"]
 
