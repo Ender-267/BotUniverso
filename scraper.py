@@ -74,15 +74,15 @@ def unistats(nick: str):
     headers = (
         {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8",
-        "Accept-Encoding": "gzip, deflate, zstd",
+        "Accept-Encoding": "gzip",
         "Accept-Language": "es-ES,es;q=0.6",
         "Cache-Control": "max-age=0",
         "Origin": "https://stats.universocraft.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
     },
     {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, zstd",
+        "Accept-Encoding": "gzip",
         "Accept-Language": "es-ES,es;q=0.6",
         "Cache-Control": "max-age=0",
         "Origin": "https://stats.universocraft.com",
@@ -90,7 +90,7 @@ def unistats(nick: str):
     },
     {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8",
-        "Accept-Encoding": "gzip, deflate, zstd",
+        "Accept-Encoding": "gzip",
         "Accept-Language": "es-ES,es;q=0.6",
         "Cache-Control": "max-age=0",
         "Origin": "https://stats.universocraft.com",
@@ -125,6 +125,7 @@ def unistats(nick: str):
 
     pagina = BeautifulSoup(respuesta.text, 'html.parser')
 
+    print(pagina.prettify())
     tag_premium = pagina.find('span', class_="ProfileTag TagPremium")
     if tag_premium:
         premium = 'SI'
