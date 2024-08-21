@@ -125,7 +125,6 @@ def unistats(nick: str):
 
     pagina = BeautifulSoup(respuesta.text, 'html.parser')
 
-    print(pagina.prettify())
     tag_premium = pagina.find('span', class_="ProfileTag TagPremium")
     if tag_premium:
         premium = 'SI'
