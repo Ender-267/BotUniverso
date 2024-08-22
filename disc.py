@@ -159,6 +159,28 @@ async def ip(ctx, value: str):
     except sqlite3.Error as e:
         await ctx.send(f"Error de SQL: {e}")
 
+@bot.command(name='plot')
+async def nick(ctx, value: str):
+    value = value.lower()
+    try:
+        with sqlite3.connect(BASE_DATOS) as db:
+            cur = db.cursor()
+            query = "select plot_x, plot_y, dueño, tipo_relacion from plots natural join pertenece_a_plot where lower(usuario) == ? and tipo_relacion != 'DENY'"
+            tupla = (value,)
+            await query_con_handling(cur, query, tupla)
+            rows = cur.fetchall()
+            if rows:
+                archivo = crear_archivo(('plot_x', 'plot_y', 'dueño', 'tipo_relacion'), rows)
+                await ctx.send(file=discord.File(archivo))
+                try:
+                    os.remove(archivo)
+                except FileNotFoundError:
+                    pass
+            else:
+                await ctx.send("No se encontraron resultados")
+    except sqlite3.Error as e:
+        await ctx.send(f"Error de SQL: {e}")
+
 # Event triggered when bot is ready
 @bot.event
 async def on_ready():
