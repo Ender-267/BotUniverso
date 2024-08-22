@@ -164,7 +164,7 @@ async def ip(ctx, value: str):
 async def nick(ctx, value: str):
     value = value.lower()
     try:
-        with sqlite3.connect(BASE_DATOS) as db:
+        with sqlite3.connect(BASE_DATOS_PLOTS) as db:
             cur = db.cursor()
             query = "select plot_x, plot_y, dueño, tipo_relacion from plots natural join pertenece_a_plot where lower(usuario) == ? and tipo_relacion != 'DENY'"
             tupla = (value,)
