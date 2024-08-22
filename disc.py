@@ -14,6 +14,7 @@ from prettytable import PrettyTable
 ID_CANAL_TOKEN = 1246869970340806686
 TOKEN_TXT = './token.json'
 BASE_DATOS = './base_v3.db'
+BASE_DATOS_PLOTS = '../ModTest/plots.db'
 
 # Discord bot setup
 intents = discord.Intents.default()
