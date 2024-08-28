@@ -204,7 +204,7 @@ def generar_queue():
     try:
         with sqlite3.connect(BASE_DE_DATOS_SQL) as db:
             cursor = db.cursor()
-            querry =  '''SELECT DISTINCT u.*
+            query =  '''SELECT DISTINCT u.usuario
                 FROM usuarios u
                 JOIN datos d ON u.usuario = d.usuario
                 WHERE d.db_proveniente IN ('OMEGACRAFT', 'HYCRAFT')
@@ -212,7 +212,15 @@ def generar_queue():
                 ORDER BY RANDOM()
                 LIMIT 10000
                 '''
-            cursor = query_con_handling(cursor, querry)
+            query2 = '''
+                SELECT DISTINCT usuarios.usuario
+                FROM usuarios
+                INNER JOIN tops ON usuarios.usuario = tops.usuario
+                WHERE rango IS NULL
+                ORDER BY RANDOM()
+                LIMIT 10000
+            '''
+            cursor = query_con_handling(cursor, query2)
             queue = cursor.fetchall()
             print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
             return queue
