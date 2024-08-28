@@ -208,6 +208,7 @@ def generar_queue():
                 FROM usuarios u
                 JOIN datos d ON u.usuario = d.usuario
                 WHERE d.db_proveniente IN ('OMEGACRAFT', 'HYCRAFT')
+                AND rango IS NULL
                 ORDER BY RANDOM()
                 LIMIT 10000
                 '''
