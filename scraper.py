@@ -220,7 +220,7 @@ def generar_queue():
                 ORDER BY RANDOM()
                 LIMIT 10000
             '''
-            cursor = query_con_handling(cursor, query2)
+            cursor = query_con_handling(cursor, query)
             queue = cursor.fetchall()
             print(Fore.CYAN + "Queue regenerada" + Style.RESET_ALL)
             return queue
